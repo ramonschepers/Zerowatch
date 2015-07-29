@@ -6,32 +6,32 @@ class ShellState
 #define MAX_SHELL_CHARS 20
 #define MAX_PAGES 9
 #define APPS_PER_PAGE 11
-  u8 page;
-  int appCount; //how many apps per page?
-  int _last;
-  int x;
-  int y;
-  int apps_on_page;
-  int xxxx;
-  bool needredraw;
-  u8 tot_pages;
-  u8 _appMap[APPS_PER_PAGE];
-  u8 _appMap2[MAX_PAGES][APPS_PER_PAGE];
-  u8 sel;
-  u8 i;
-  u8 j;
-  bool gui_changed;
-
 public:
-  void GetName(u8 page, u8 index, char* name, int len)
+  uint8_t page;
+  uint8_t appCount; //how many apps per page?
+  uint8_t _last;
+  uint8_t x;
+  uint8_t y;
+  uint8_t apps_on_page;
+  uint8_t xxxx;
+  uint8_t _needredraw;
+  uint8_t tot_pages;
+  uint8_t _appMap[APPS_PER_PAGE];
+  uint8_t _appMap2[MAX_PAGES][APPS_PER_PAGE];
+  uint8_t sel;
+  uint8_t i;
+  uint8_t j;
+  uint8_t gui_changed;
+  uint8_t k;
+  
+  void GetName(uint8_t index, char* name, int len)
   {
     if (index < appCount)
     {
-      Shell_GetAppName(_appMap[index],name,len);
-      return;
+      watch.GetAppName(_appMap[index],name,len);
     }
   }
-  void Draw(u8 page, u8 index, bool hilite)
+  void Draw(uint8_t page, uint8_t index, bool hilite)
   {
     x = index % CELL_COLS;
     y = index / CELL_COLS;
@@ -48,7 +48,7 @@ public:
     }
   }
 
-  void Draw2(u8 page, u8 index, bool hilite)
+  void Draw2(uint8_t page, uint8_t index, bool hilite)
   {
     char name[32];
     Shell_GetAppName(_appMap2[page][index],name,sizeof(name));
@@ -79,23 +79,22 @@ public:
     switch (e->Type)
     {
      case Event::OpenApp:
-     needredraw = 1;
-        apps_on_page = 1;
-        tot_pages = 0;
+        _needredraw = 0;
+        apps_on_page = 0;
+        tot_pages = 1;
         xxxx = 0;
         sel = 0;
         gui_changed=0;
         page = 0;
         watch.clear_screen();
-
         j = 0;
             //  Count built in apps
             appCount = 0;
-            for (i = 1; i < Shell_AppCount(); i++)
+            k = Shell_AppCount();
+            for (i = 1; i < k; i++)
             {
-              char name[32];
-              
-              Shell_GetAppName(_appMap[appCount],name,sizeof(name));
+              char name[32];              
+              GetName(_appMap[appCount],name,sizeof(name));
               _appMap[appCount++] = i;
               if (appCount >= (APPS_PER_PAGE*MAX_PAGES)){
                 break;
@@ -103,7 +102,7 @@ public:
             }
             for (i = 1; i < Shell_AppCount(); i++){
               char name[32];
-              Shell_GetAppName(_appMap[appCount],name,sizeof(name));
+              GetName(_appMap[appCount],name,sizeof(name));
 
               if ((i %APPS_PER_PAGE) == 0) {
                 page++;
@@ -133,7 +132,7 @@ public:
        break;
 
       case Event::None:
-        if (needredraw) {
+        if (_needredraw) {
            i = APPS_PER_PAGE-1;
            while (i--) {
                   if (i == sel) {
@@ -142,7 +141,7 @@ public:
                     Draw2(page, i,false);
                   }
           }
-          needredraw = 0;
+          _needredraw = 0;
         }
         if (gui_changed) {
           gui_changed = 0;
@@ -166,9 +165,9 @@ public:
             page-=1;
             if (xxxx != page) {
               sel = APPS_PER_PAGE-2;
-              needredraw = 1;
-              if (page < 1) {
-                page = 0;
+              _needredraw = 1;
+              if (page < 2) {
+                page = 1;
               }
             }
           }
@@ -183,12 +182,12 @@ public:
         } else {
           if (page < MAX_PAGES) {
             page++;
-            if (page >= tot_pages) {
-              page = tot_pages;
+            if (page >= tot_pages-1) {
+              page = tot_pages-1;
             }
             if (xxxx != page) {
               sel = 0;
-              needredraw = 1;
+              _needredraw = 1;
             }
           }
         }
@@ -197,7 +196,7 @@ public:
 
       case Event::buttn_sel:
         char appname[32];
-        Shell_GetAppName(_appMap2[page][sel],appname,sizeof(appname));
+        GetName(_appMap2[page][sel-1],appname,sizeof(appname));
         watch.Shell_LaunchApp(appname);
         break;
 
@@ -208,4 +207,5 @@ public:
   }
 };
 INSTALL_APP(shell,ShellState);
+
 

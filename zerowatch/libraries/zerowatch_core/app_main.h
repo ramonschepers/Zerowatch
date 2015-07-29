@@ -2,19 +2,16 @@
 #define __zerowatch_apps_H__
 
 
-#define MAX_APP_BUFFER 8096 //16384, but can be set up to 16384bytes. (16kilobytes)
+#define MAX_APP_BUFFER 16384 //can be set up to 16384bytes. (16kilobytes)
 #include <inttypes.h>
 #include <avr/pgmspace.h>
 
-#define CONST_PCHAR const char *
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned long u32;
 #ifndef abs
 #define abs(_x) ((_x) < 0 ? -(_x) : (_x))
 #endif
 #define CONST_PCHAR const prog_char*
 #define ROMSTRING(_s) extern const char _s[] PROGMEM
+
 //***************************************************
 //define stuff
 //***************************************************
@@ -28,18 +25,19 @@ typedef unsigned long u32;
 #define YELLOW          0xFFE0
 #define WHITE           0xFFFF
 
+
 class PStr
 {
-  char _str[32];
+	char _str[32];
 public:
-  PStr(const char* pstr)
-  {
-    strncpy(_str,pstr,sizeof(_str));
-  }
-  operator const char*()
-  {
-    return _str;
-  }
+	PStr(const char* pstr)
+	{
+		strncpy(_str,pstr,sizeof(_str));
+	}
+	operator const char*()
+	{
+		return _str;
+	}
 };
 
 
@@ -62,38 +60,38 @@ typedef int (*AppProc)(Event* e, void* appState);
 //  _n is the human readable name of the application
 //  _s is an object with a OnEvent method
 
-#define _INSTALL_APP(_n,_s) \
-  ROMSTRING(S_##_n); \
-  const char S_##_n[] = #_n; \
-  int proc_##_n(Event* e, void* s) {return ((_s*)s)->OnEvent(e);} \
-  RegisterApp app_##_n(S_##_n,(AppProc)proc_##_n,sizeof(_s))
+#define INSTALL_APP(_n,_s) \
+	ROMSTRING(S_##_n); \
+	const char S_##_n[] = #_n; \
+	int proc_##_n(Event* e, void* s) {return ((_s*)s)->OnEvent(e);} \
+	RegisterApp app_##_n(S_##_n,(AppProc)proc_##_n,sizeof(_s))
 
-#define INSTALL_APP(_n,_s) _INSTALL_APP(_n,_s)
-
-//  Auto register the app with the Shell, will be called before Shell_Init
+//	Auto register the app with the Shell, will be called before Shell_Init
 class RegisterApp
 {
 public:
-  RegisterApp(const char* name, AppProc proc, int stateSize);
+	RegisterApp(const char* name, AppProc proc, int stateSize);
 };
+
+
+
 bool Shell_GetAppName(int index, char* name, int len);
-void Shell_LaunchFile(const char* filename);
-const char* Shell_AppName();
 int Shell_AppCount();
+void Shell_LaunchApp(const char* params);
+void Shell_LaunchFile(const char* filename);
 
 class _Shell
 {
+  bool open;
   AppProc _proc;
   int _appResult;
-  u8  _appIndex;
+  uint8_t  _appIndex;
   char _launch[32];
-  u8  _buffer[MAX_APP_BUFFER];  // Applications run in this buffer
+  unsigned char _buffer[MAX_APP_BUFFER];  // Applications run in this buffer
   bool force_exit;
   void init2();
   AppProc FindApp(const char* name);
-  void Loop2();
  public:
-  
   bool btn_up;
   bool btn_sel;
   bool btn_down;

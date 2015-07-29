@@ -1,9 +1,9 @@
-#include <Arduino.h>
 #include <SPI.h>
 #include "pt2.h"
 #include "Ucglib.h"
 #include <avr/pgmspace.h>
-#include "Zerowatch_core.h"
+#include "zerowatch_core.h"
+#include "app_main.h"
 
 Zerowatch::Zerowatch() {
 	if (!system_init) {
@@ -80,14 +80,15 @@ int Zerowatch::FreeRam() {
 
 int Zerowatch::ram_usage(bool type) {
 	if (type == 0) {
-		return map(FreeRam(),0,98304,100,0); //in percent
+		return map(FreeRam(),0,32768,100,0); //in percent
 	} else {
-		return map(FreeRam(),0,98304,96,0); //in kb
+		return map(FreeRam(),0,32768,32,0); //in kb
 	}
 }
 
 
 void Zerowatch::init() {
+	pinMode(A5,INPUT);
 	system_init = 1;
 	TRANSACTION_POINTER = TR_MODE_IDLE;
 	TR_COMMAND = CMD_TYPE_NONE;
@@ -243,11 +244,17 @@ void Zerowatch::watchface_1() {
     ucg.print("Fri");
   } else if (iWeek == 7) {
     ucg.print("Sat");
-  } else if (iWeek == 0) {
-    #if (debug == 1)
-    debug_method.println(F("Day failed"));
-    #endif
-  }  
+  }
+  /*
+    ucg.setColor(0,0,0);
+    ucg.drawBox(10,60,40,10);
+    ucg.setPrintPos(10,60);
+    ucg.setColor(255,255,255);
+    ucg.setFont(font1);
+    ucg.print("Battery (%): ");
+    ucg.setPrintPos(10,70);
+    ucg.print(GetBatteryPercent());
+*/  
   clock_needs_redraw = 0;
 }
 
@@ -276,6 +283,9 @@ int Zerowatch::button_thread1(struct pt *pt, int interval) {
         menu_needs_redraw = 1;
       }
     } else {
+		ucg.begin(UCG_FONT_MODE_TRANSPARENT);
+		ucg.setRotate180();
+		level = 0;
         screen_changed = 1;
 		needredraw = 1;
 	}
@@ -312,7 +322,12 @@ int Zerowatch::button_thread2(struct pt *pt, int interval) {
 			screen_changed = 1;
 		  }
 	  }
-    }
+    } else {
+		ucg.begin(UCG_FONT_MODE_TRANSPARENT);
+		ucg.setRotate180();
+		level = 0;
+		needredraw = 1;
+	}
     screen_timeout = default_timeout;
     screen_dimmed = 0;
     screenneedstodim = 0;
@@ -342,7 +357,12 @@ int Zerowatch::button_thread3(struct pt *pt, int interval) {
         screen_changed = 1;
       }
     }
-    }
+    } else {
+		ucg.begin(UCG_FONT_MODE_TRANSPARENT);
+		ucg.setRotate180();
+		level = 0;
+		needredraw = 1;
+	}
     screen_timeout = default_timeout;
     screen_dimmed = 0;
     screenneedstodim = 0;
@@ -372,7 +392,12 @@ int Zerowatch::button_thread4(struct pt *pt, int interval) {
         screen_changed = 1;
       }
     }
-    }
+    } else {
+		ucg.begin(UCG_FONT_MODE_TRANSPARENT);
+		ucg.setRotate180();
+		level = 0;
+		needredraw = 1;
+	}
     screen_timeout = default_timeout;
     screen_dimmed = 0;
     screenneedstodim = 0;
@@ -479,7 +504,7 @@ void Zerowatch::__Zerowatch_loop() {
 			  ucg.clearScreen();
 			  buttons_can_be_pressed = 1;
 			  menu_needs_redraw = 0;
-			    _shell.init();
+			  _shell.init();
 			  init_apps = 0;
 			}
 			if(btn_up_pressed) {
@@ -513,7 +538,8 @@ void Zerowatch::__Zerowatch_loop() {
 		}
 	} else {
 		if (screenneedstodim) {
-			ucg.clearScreen();
+			//ucg.clearScreen();
+			screen_powerdown();
 			screenneedstodim = 0;
 			if (!needredraw) {
 				needredraw = 1;
@@ -522,6 +548,29 @@ void Zerowatch::__Zerowatch_loop() {
 	}
 }
 
+void Zerowatch::screen_powerdown() {
+        digitalWrite(6, LOW);
+        delay(50);
+        digitalWrite(6, HIGH);
+}
+
+bool Zerowatch::GetAppName(int index, char* name, int len) {
+	return Shell_GetAppName(index, name, len);
+}
+
+int Zerowatch::GetBatteryPercent() {
+	long d = analogRead(A5);
+	d *= 1652;
+	uint8_t val = map(d >> 8,3700,4200,0,100);
+	if (val > 100) {
+		val = 100;
+	}
+	return val;	//Battery divider scaled to millivolts from reference
+}
+
+int Zerowatch::AppCount() {
+ return Shell_AppCount();
+}
 
 void Zerowatch::update_screen() {
  if (level == 0) {
@@ -720,7 +769,7 @@ void Zerowatch::processTransaction() {
 }
 
 
-void Zerowatch::Shell_LaunchApp(const char* params)
+void Zerowatch::Shell_LaunchApp(char* params)
 {
   _shell.Launch(params);
 }

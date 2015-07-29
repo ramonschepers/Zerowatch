@@ -1,7 +1,6 @@
 #ifndef __zerowatch_core_H__
 #define __zerowatch_core_H__
 
-#include <Arduino.h>
 #include <SPI.h>
 #include "pt2.h"
 #include "Ucglib.h"
@@ -53,6 +52,8 @@ private:
   void watchface_1();
   void watchface_2();
   void watchface_3();
+  
+  void screen_powerdown();
   
   //variables below here
 	#define BT Serial1
@@ -168,13 +169,14 @@ private:
 	
 	struct pt pt1,pt2,pt3,pt4,pt5,pt6,pt7,pt8;
     Ucglib_SSD1351_18x128x128_HWSPI ucg;
+    _Shell _shell;
 public:
-  _Shell _shell;
   Zerowatch();
   void __init();
   void __Zerowatch_loop();
   //api calls
-  void Shell_LaunchApp(const char* params);
+  void Shell_LaunchApp(char* params);
+  int GetBatteryPercent();
   int ram_usage(bool type); //type 0 = percent, type 1 = kb
   //void set_screen_timeout(uint8_t timeout);
   //void update_time(uint8_t day, uint8_t hour, bool ampm, uint8_t minute);
@@ -189,5 +191,7 @@ public:
   void setPrintPos(uint8_t x, uint8_t y);
   void print(char* text);
   void printint(int text);
+  bool GetAppName(int index, char* name, int len);
+  int AppCount();
 }; 
 #endif
