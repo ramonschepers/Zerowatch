@@ -88,6 +88,8 @@ int Zerowatch::ram_usage(bool type) {
 
 
 void Zerowatch::init() {
+	pinMode(SCREEN,OUTPUT);
+	digitalWrite(SCREEN,HIGH);
 	pinMode(A5,INPUT);
 	system_init = 1;
 	TRANSACTION_POINTER = TR_MODE_IDLE;
@@ -550,8 +552,13 @@ void Zerowatch::__Zerowatch_loop() {
 
 void Zerowatch::screen_powerdown() {
         digitalWrite(6, LOW);
+        //digitalWrite(6, HIGH);
+		
+        digitalWrite(7, LOW);
+        digitalWrite(8, LOW);
+		
         delay(50);
-        digitalWrite(6, HIGH);
+		SPI.end();
 }
 
 bool Zerowatch::GetAppName(int index, char* name, int len) {
@@ -562,6 +569,13 @@ int Zerowatch::GetBatteryPercent() {
 	long d = analogRead(A5);
 	d *= 1652;
 	uint8_t val = map(d >> 8,3700,4200,0,100);
+	if (val > 150) {
+		val = 0;
+	}
+	if (val < 0) {
+		val = 0;
+	}
+		
 	if (val > 100) {
 		val = 100;
 	}

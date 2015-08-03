@@ -10,6 +10,7 @@
 class Zerowatch {
 private:
   #define sel_btn 10
+  #define SCREEN 9
   #define up_btn 3
   #define down_btn 5
   #define back_btn 2
